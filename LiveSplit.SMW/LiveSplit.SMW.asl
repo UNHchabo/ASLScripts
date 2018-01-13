@@ -1,3 +1,19 @@
+// Custom script for autosplitting on the 1 Yump category for the SMW Extended Categories group.
+//
+// For this, I made the following set of splits:
+// 1. Load Map
+// 2. Enter YI1
+// 3. Goal Tape
+// 4. Load Map
+// 5. Enter YSP
+// 6. Yump
+//
+// The second Load Map split should always be the same length, but I didn't want to bother with setting the memory query
+// for only the opening cutscene. Also, if I failed the Yump and merely hit the switch, I would Undo Split, then Reset,
+// to keep my best time as my actual PB.
+//
+// "Game Mode" ram values can be found here: http://old.smwiki.net/wiki/RAM_Address/$7E:0100
+
 state("higan"){}
 state("snes9x"){}
 state("snes9x-x64"){}
@@ -10,6 +26,10 @@ startup
 	settings.SetToolTip("bosses", "Split on boss fanfare");
 	settings.Add("switchPalaces", false, "Switch Palaces");
 	settings.SetToolTip("switchPalaces", "Split on completing a switch palace");
+	settings.Add("loadWorldMap", false, "World Map");
+	settings.SetToolTip("loadWorldMap", "Split on loading the world map");
+	settings.Add("loadLevel", false, "Mario Start");
+	settings.SetToolTip("loadLevel", "Split on loading a level");
 }
 
 init
@@ -69,6 +89,7 @@ init
 		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x1f2a) { Name = "redSwitch" },
 		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x13C6) { Name = "bossDefeat" },
 		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x190D) { Name = "peach" },
+		new MemoryWatcher<byte>((IntPtr)memoryOffset + 0x100) { Name = "gameMode" },
 	};
 }
 
@@ -98,6 +119,8 @@ split
 	var switchPalaceExit = yellowPalace || greenPalace || bluePalace || redPalace;
 	var bossExit = settings["bosses"] && vars.watchers["fanfare"].Old == 0 && vars.watchers["fanfare"].Current == 1 && vars.watchers["bossDefeat"].Current == 1;
 	var bowserDefeated = settings["bosses"] && vars.watchers["peach"].Old == 0 && vars.watchers["peach"].Current == 1;
+	var enterWorldMap = settings["loadWorldMap"] && vars.watchers["gameMode"].Old == 0xd && vars.watchers["gameMode"].Current == 0xe;
+	var enterLevel = settings["loadLevel"] && vars.watchers["gameMode"].Old == 0xe && vars.watchers["gameMode"].Current == 0xf;
 
-	return goalExit || keyExit || switchPalaceExit || bossExit || bowserDefeated;
+	return goalExit || keyExit || switchPalaceExit || bossExit || bowserDefeated || enterWorldMap || enterLevel;
 }
